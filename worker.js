@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_ID = "monie-v39";
+const CACHE_ID = "monie-v44";
 
 const FILES = [
   "./", "index.html", "script.js", "style.css",
