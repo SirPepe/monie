@@ -1,7 +1,8 @@
-const CACHE_ID = "v1";
+"use strict";
 
+const CACHE_ID = "monie-v39";
 
-const PRECACHE_FILES = [
+const FILES = [
   "./", "index.html", "script.js", "style.css",
   "api/latest.json", "lib/localforage.min.js",
   "img/icon48.png", "img/icon72.png", "img/icon96.png", "img/icon144.png",
@@ -9,51 +10,69 @@ const PRECACHE_FILES = [
   "favicon.ico", "manifest.json",
 ];
 
-async function precache () {
-  try {
-    const cache = await caches.open(CACHE_ID);
-    return cache.addAll(PRECACHE_FILES);
-  } catch (fail) {
-    throw fail;
+async function notify (title, data) {
+  if (self.Notification.permission === "granted") {
+    const notification = Object.assign({}, {
+      icon: "img/icon192.png",
+      badge: "img/icon192-mono.png",
+    }, data);
+    return self.registration.showNotification(title, notification);
   }
 }
 
-async function fromCache (request) {
+async function handleInstallation (evt) {
+  console.log(`Installing ${CACHE_ID}`);
   const cache = await caches.open(CACHE_ID);
-  return cache.match(request);
+  const installation = await cache.addAll(FILES);
+  // Is there already a service worker (= a previous version) running?
+  if (self.registration.active) {
+    notify("New version available", {
+      body: "Close all instances of the app to apply the update"
+    });
+  }
+  return installation;
 }
 
-async function update (request) {
+self.addEventListener("install", (evt) => evt.waitUntil(handleInstallation(evt)) );
+
+async function handleActivation () {
+  console.log(`Activating ${CACHE_ID}`);
+  const cacheKeys = await self.caches.keys();
+  const toDelete = cacheKeys.filter( (key) => key !== CACHE_ID );
+  return Promise.all(toDelete.map( (key) => self.caches.delete(key) ));
+}
+
+self.addEventListener("activate", (evt) => evt.waitUntil(handleActivation()) );
+
+
+async function refreshRates (request) {
   const [ cache, response ] = await Promise.all([
     caches.open(CACHE_ID), fetch(request),
   ]);
-
-  await cache.put(request, response.clone());
-  return response;
-}
-
-async function refresh (response) {
-  const [ clients, data ] = await Promise.all([
-    self.clients.matchAll(), response.json(),
-  ]);
-  for (const client of clients) {
-    client.postMessage({ type: "RATE_UPDATE", payload: data })
+  if (response.ok) {
+    // overwrite old response to "api/latest.json"
+    await cache.put(new Request("api/latest.json"), response.clone());
+    return { updated: true, response };
+  } else {
+    return { updated: false, response: cache.match("api/latest.json") };
   }
 }
 
-async function handleError (details) {
-  for (const client of await self.clients.matchAll()) {
-    client.postMessage({ type: "ERROR", payload: details })
+
+async function serveFromCache (evt) {
+  console.log(`Serving ${evt.request.url} from cache ${CACHE_ID}`);
+  const cache = await caches.open(CACHE_ID);
+  if (evt.request.url.endsWith("api/latest.json?refresh=true")) {
+    console.log(`Updating rates...`);
+    const { response, updated } = await refreshRates(evt.request);
+    if (updated) {
+      notify("Rates updated", { body: `Successfully requested new rates` });
+    } else {
+      notify("Failed to update rates", { body: `Rate request failed with code ${response.status}` });
+    }
+    return response;
   }
+  return cache.match(evt.request);
 }
 
-self.addEventListener("fetch", function (evt) {
-  evt.respondWith(fromCache(evt.request));
-  if (evt.request.url.endsWith("api/latest.json")) {
-    update(evt.request)
-      .then(refresh)
-      .catch(handleError);
-  }
-});
-
-self.addEventListener("install", (evt) => evt.waitUntil(precache()) );
+self.addEventListener("fetch", (evt) => evt.respondWith(serveFromCache(evt)) );

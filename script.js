@@ -1,3 +1,7 @@
+(function(){
+"use strict";
+
+
 // Maps currency codes (eg. "EUR") to an object containing a currencies' name
 // (eg. "Euro") and symbol (eg. "€"). See https://tinyurl.com/jsmapdocs
 // for more info on maps.
@@ -39,7 +43,7 @@ const currencies = new Map([
 
 // The currency data comes from the European Central Bank and only contains
 // exchange rates relative to the euro. Use this function to get the rate from
-// one non-euro-currency to another
+// one any currency to any another
 function convertRelative (rates, from, to, base = "EUR") {
   if (to === base && from === base) {
     return 1;
@@ -93,13 +97,6 @@ function on (elements, events, ...handlers) {
 }
 
 
-// Request the data from the API, reject the promise if anything goes wrong
-function getRates () {
-  return fetch("api/latest.json")
-    .then( (res) => (res.ok) ? res.json() : Promise.reject(res.staus) );
-}
-
-
 // Create option elements for the select elements from the currencies
 function createOptionElements (currencies) {
   return Array.from(currencies)
@@ -110,7 +107,27 @@ function createOptionElements (currencies) {
 }
 
 
-// Save and restore the last inputs
+// DOM elements
+const travelCurrencyInput  = $(".currency__select--travel");
+const homeCurrencyInput    = $(".currency__select--home");
+const travelAmountInput    = $(".amount__input--travel");
+const travelCurrencyOutput = $(".amount__currency--travel");
+const homeAmountOutput     = $(".amount__output--home");
+const homeCurrencyOutput   = $(".amount__currency--home");
+const refreshButton        = $(".refresh");
+
+
+// Populate select elements
+travelCurrencyInput.append(...createOptionElements(currencies));
+homeCurrencyInput.append(...createOptionElements(currencies));
+
+
+// =======================================================
+// Your code goes here! (and maybe into a service worker?)
+// =======================================================
+
+
+// Save and restore the last inputs from local storage
 
 localforage.config({ name: "monie", storeName: "cache", });
 
@@ -133,16 +150,22 @@ async function restoreInput () {
 }
 
 
-// DOM elements
-const travelCurrencyInput  = $(".currency__select--travel");
-const homeCurrencyInput    = $(".currency__select--home");
-const travelAmountInput    = $(".amount__input--travel");
-const travelCurrencyOutput = $(".amount__currency--travel");
-const homeAmountOutput     = $(".amount__output--home");
-const homeCurrencyOutput   = $(".amount__currency--home");
-const refreshButton        = $(".refresh");
+// Fetch rates. If this is a refresh, add "?refresh=true" to the url
+async function getRates (refreshing = false) {
+  let url = "api/latest.json";
+  if (refreshing) {
+    url += "?refresh=true";
+  }
+  const response = await fetch(url);
+  if (response.ok) {
+    return response.json();
+  } else {
+    throw new Error(`Request failed with status code ${ response.staus }`)
+  }
+}
 
 
+// Compute exchange rates from current inputs and rates passed to the function
 function calculateRates (rates) {
   const travelCurrency = travelCurrencyInput.value;
   const homeCurrency = homeCurrencyInput.value;
@@ -153,48 +176,31 @@ function calculateRates (rates) {
 }
 
 
-async function applyChanges ({ travelCurrency, homeCurrency, travelAmount, homeAmount }) {
+// Apply new data to the dom
+async function applyChanges (data) {
+  const { travelCurrency, homeCurrency, travelAmount, homeAmount } = data;
   travelCurrencyOutput.innerHTML = travelCurrency;
   homeAmountOutput.innerHTML = homeAmount.toFixed(2);
   homeCurrencyOutput.innerHTML = homeCurrency;
   await saveInput(travelCurrency, homeCurrency, travelAmount);
-  return { travelCurrency, homeCurrency, travelAmount, homeAmount };
+  return data;
 }
 
 
-async function refreshRates (evt) {
-  if (!evt.target.classList.contains("refreshing")) {
-    evt.target.classList.add("refresh--working");
+// Handle a click on the refresh link
+async function handleRefreshClick () {
+  if (!refreshButton.classList.contains("refresh--working")) {
+    refreshButton.classList.add("refresh--working");
     try {
-      return await getRates();
+      return getRates(true);
     } finally {
-      evt.target.classList.remove("refresh--working");
+      refreshButton.classList.remove("refresh--working");
     }
   }
 }
 
 
-async function notify (title, options) {
-  const permission = await window.Notification.requestPermission();
-  if (permission === "granted") {
-    const sw = await navigator.serviceWorker.ready;
-    return sw.showNotification(title, options);
-  }
-}
-
-async function handleRateUpdateMessage (data) {
-  const newData = await applyChanges(calculateRates(data));
-  const { travelCurrency, homeCurrency, travelAmount, homeAmount } = newData;
-  return notify("Rates updated!", {
-    icon: "img/icon192.png",
-    badge: "img/icon192-mono.png",
-    body: `${travelAmount} ${travelCurrency} = ${homeAmount.toFixed(2)} ${homeCurrency}`,
-  });
-}
-
-
-function init (worker, rates, lastInput) {
-  latestRates = rates;
+function init (rates, lastInput) {
   // Set the inputs and selects to the last saved state
   travelCurrencyInput.value = lastInput.travelCurrency;
   homeCurrencyInput.value = lastInput.homeCurrency;
@@ -205,24 +211,26 @@ function init (worker, rates, lastInput) {
   const elements = [ travelCurrencyInput, homeCurrencyInput, travelAmountInput ];
   on(elements, "keyup click change", () => applyChanges(calculateRates(rates)) );
   // Enable rate refresh
-  on(refreshButton, "click", refreshRates);
+  on(refreshButton, "click", async (evt) => {
+    const newRates = await handleRefreshClick();
+    applyChanges(calculateRates(newRates));
+  });
   // Display the app
   document.body.classList.add("loaded");
-  // Wait for rate updates
-  navigator.serviceWorker.addEventListener("message", async (evt) => {
-    if (evt.data.type === "RATE_UPDATE") {
-      return handleRateUpdateMessage(evt.data.payload);
-    }
-  });
 }
 
-// Populate select elements
-travelCurrencyInput.append(...createOptionElements(currencies));
-homeCurrencyInput.append(...createOptionElements(currencies));
 
 // Initialize with the rates and data from the cache
-Promise.all([
-    navigator.serviceWorker.register("worker.js"), getRates(), restoreInput()
-  ])
-  .then(([ worker, rates, lastInput ]) => init(worker, rates, lastInput) )
+Promise.all([ getRates(), restoreInput() ])
+  .then( ([ rates, lastInput ]) => init(rates, lastInput) )
   .catch( (reason) => window.alert(reason) );
+
+
+// Launch the service worker and request permission for notifications once
+// everything else is done
+on(window, "load", async () => {
+  window.Notification.requestPermission();
+  window.navigator.serviceWorker.register("worker.js");
+});
+
+})();
