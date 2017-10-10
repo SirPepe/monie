@@ -7,6 +7,11 @@
     "theme_color": "#263238",
     "description": "Exchange Rate Calculator PWA",
     "icons": [{
+      "src": "img/icon48-mono.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "badge"
+    }, {
       "src": "img/icon48.png",
       "sizes": "48x48",
       "type": "image/png"

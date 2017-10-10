@@ -1,12 +1,12 @@
 "use strict";
 
-const CACHE_ID = "monie-v44";
+const CACHE_ID = "monie-v47";
 
 const FILES = [
   "./", "index.html", "script.js", "style.css",
   "api/latest.json", "lib/localforage.min.js",
-  "img/icon48.png", "img/icon72.png", "img/icon96.png", "img/icon144.png",
-  "img/icon168.png", "img/icon192.png", "img/icon192-mono.png", "img/icon384.png",
+  "img/icon48.png", "img/icon48-mono.png", "img/icon72.png", "img/icon96.png",
+  "img/icon144.png", "img/icon168.png", "img/icon192.png", "img/icon384.png",
   "favicon.ico", "manifest.json",
 ];
 
@@ -14,7 +14,7 @@ async function notify (title, data) {
   if (self.Notification.permission === "granted") {
     const notification = Object.assign({}, {
       icon: "img/icon192.png",
-      badge: "img/icon192-mono.png",
+      badge: "img/icon48-mono.png",
     }, data);
     return self.registration.showNotification(title, notification);
   }
@@ -26,7 +26,7 @@ async function handleInstallation (evt) {
   const installation = await cache.addAll(FILES);
   // Is there already a service worker (= a previous version) running?
   if (self.registration.active) {
-    notify("New version available", {
+    notify(`New version ${CACHE_ID} available`, {
       body: "Close all instances of the app to apply the update"
     });
   }

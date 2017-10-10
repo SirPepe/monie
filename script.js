@@ -127,6 +127,10 @@ homeCurrencyInput.append(...createOptionElements(currencies));
 // =======================================================
 
 
+// Display the app when ready
+// document.body.classList.add("loaded");
+
+
 // Save and restore the last inputs from local storage
 
 localforage.config({ name: "monie", storeName: "cache", });
@@ -236,7 +240,7 @@ on(window, "load", () => {
       if (window.Notification.permission === "granted") {
         new Notification("Ready for offline use", {
           icon: "img/icon192.png",
-          badge: "img/icon192-mono.png",
+          badge: "img/icon48-mono.png",
           body: "You can use this web app at any time, even when you're offline",
         });
       }
