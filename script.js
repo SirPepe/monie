@@ -232,20 +232,19 @@ Promise.all([ getRates(), restoreInput() ])
 
 // Launch the service worker and request permission for notifications once
 // everything else is done
-on(window, "load", () => {
+on(window, "load", async () => {
   window.Notification.requestPermission();
-  window.navigator.serviceWorker.register("worker.js").then( (registration) => {
-    // Is there's no active service worker this is the first installation
-    if (!registration.active) {
-      if (window.Notification.permission === "granted") {
-        new Notification("Ready for offline use", {
-          icon: "img/icon192.png",
-          badge: "img/icon48-mono.png",
-          body: "You can use this web app at any time, even when you're offline",
-        });
-      }
+  const registration = await window.navigator.serviceWorker.register("worker.js");
+  // Is there's no active service worker this is the first installation
+  if (!registration.active) {
+    if (window.Notification.permission === "granted") {
+      new Notification("Ready for offline use", {
+        icon: "img/icon192.png",
+        badge: "img/icon48-mono.png",
+        body: "You can use this web app at any time, even when you're offline.",
+      });
     }
-  });
+  }
 });
 
 })();

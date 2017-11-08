@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_ID = "monie-v47";
+const CACHE_ID = "monie-v53";
 
 const FILES = [
   "./", "index.html", "script.js", "style.css",
@@ -37,6 +37,7 @@ self.addEventListener("install", (evt) => evt.waitUntil(handleInstallation(evt))
 
 async function handleActivation () {
   console.log(`Activating ${CACHE_ID}`);
+  self.clients.claim(); // to get notifications when requesting new rates from the start
   const cacheKeys = await self.caches.keys();
   const toDelete = cacheKeys.filter( (key) => key !== CACHE_ID );
   return Promise.all(toDelete.map( (key) => self.caches.delete(key) ));
