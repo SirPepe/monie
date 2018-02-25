@@ -4,7 +4,7 @@
 
 // Maps currency codes (eg. "EUR") to an object containing a currencies' name
 // (eg. "Euro") and symbol (eg. "€"). See https://tinyurl.com/jsmapdocs
-// for more info on maps.
+// for more information on maps.
 const currencies = new Map([
   [ "AUD", { name: "Australian dollar", symbol: "A$" } ],
   [ "BGN", { name: "Bulgarian lev", symbol: "лв" } ],
@@ -108,6 +108,8 @@ function createOptionElements (currencies) {
 
 
 // DOM elements
+const hamburgerButton      = $(".header__hamburger a");
+const overlay              = $(".overlay");
 const travelCurrencyInput  = $(".currency__select--travel");
 const homeCurrencyInput    = $(".currency__select--home");
 const travelAmountInput    = $(".amount__input--travel");
@@ -120,6 +122,31 @@ const refreshButton        = $(".refresh");
 // Populate select elements
 travelCurrencyInput.append(...createOptionElements(currencies));
 homeCurrencyInput.append(...createOptionElements(currencies));
+
+
+// Handle sidebar and hamburger
+
+let sidebarOpened = false;
+
+const openSidebar = () => {
+  document.body.classList.add("sidebarOpened");
+  hamburgerButton.innerText = "✕";
+  sidebarOpened = true;
+}
+
+const closeSidebar = () => {
+  document.body.classList.remove("sidebarOpened");
+  hamburgerButton.innerText = "≡";
+  sidebarOpened = false;
+}
+
+on(hamburgerButton, "click", () => {
+  (sidebarOpened) ? closeSidebar() : openSidebar();
+});
+
+on(overlay, "click", () => {
+  (sidebarOpened) ? closeSidebar() : null;
+});
 
 
 // =======================================================
@@ -246,5 +273,6 @@ on(window, "load", async () => {
     }
   }
 });
+
 
 })();

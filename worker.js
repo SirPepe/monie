@@ -1,13 +1,13 @@
 "use strict";
 
-const CACHE_ID = "monie-v53";
+const CACHE_ID = "monie-v54";
 
 const FILES = [
   "./", "index.html", "script.js", "style.css",
   "api/latest.json", "lib/localforage.min.js",
   "img/icon48.png", "img/icon48-mono.png", "img/icon72.png", "img/icon96.png",
   "img/icon144.png", "img/icon168.png", "img/icon192.png", "img/icon384.png",
-  "favicon.ico", "manifest.json",
+  "favicon.ico", "manifest.webmanifest",
 ];
 
 async function notify (title, data) {

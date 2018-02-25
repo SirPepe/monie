@@ -1,41 +1,76 @@
 <!DOCTYPE html>
+<html>
 <meta charset="UTF-8">
 <title>Monie</title>
 <meta name="viewport" content="width=device-width">
 <meta id="theme-color" name="theme-color" content="#263238">
 <link rel="stylesheet" href="style.css">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="img/icon192.png" sizes="192x192" type="image/png">
 <link rel="icon" href="img/icon384.png" sizes="384x384" type="image/png">
+<body>
 
 <header class="header">
-  <div class="container">
-    <h1>Monie <span>- Exchange Rate Calculator PWA</span></h1>
-    <p><a class="refresh">↻ <span>Refresh rates</span></a></p>
+  <div class="header__content">
+    <div class="header__container">
+      <h1>Monie <span>- Exchange Rate Calculator PWA</span></h1>
+      <p><a class="refresh">↻ <span>Refresh rates</span></a></p>
+    </div>
+    <div class="header__hamburger">
+      <a>≡</a>
+    </div>
   </div>
 </header>
 
-<main class="main container">
-  <section class="currency">
-    <h2><b>Travel</b> currency</h2>
-    <select class="currency__select currency__select--travel"></select>
-  </section>
-  <section class="currency">
-    <h2><b>Home</b> currency</h2>
-    <select class="currency__select currency__select--home"></select>
-  </section>
+<main class="content">
+
+  <div class="container calculator">
+
+    <div class="main">
+      <section class="currency">
+        <h2><b>Travel</b> currency</h2>
+        <select class="currency__select currency__select--travel"></select>
+      </section>
+      <section class="currency">
+        <h2><b>Home</b> currency</h2>
+        <select class="currency__select currency__select--home"></select>
+      </section>
+    </div>
+
+    <div class="result">
+      <section class="amount amount--travel">
+        <input type="number" min="0" value="1" class="amount__input--travel">
+        <span class="amount__currency--travel"></span>&nbsp;=
+      </section>
+      <section class="amount amount--home">
+        <span class="amount__output--home"></span>
+        <span class="amount__currency--home"></span>
+      </section>
+    </div>
+
+  </div>
+
+  <div class="sidebar">
+    <h2>About Monie</h2>
+    <p>
+      <strong>Exchange rates on the go!</strong>
+    </p>
+    <p>
+      Data from the <a href="https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml">European Central Bank</a>.
+    </p>
+    <p>
+      <small>
+        &copy; Erklärbär Enterprises
+      </small>
+    </p>
+  </div>
+
 </main>
 
-<div class="result container">
-  <section class="amount amount--travel">
-    <input type="number" min="0" value="1" class="amount__input--travel">
-    <span class="amount__currency--travel"></span>&nbsp;=
-  </section>
-  <section class="amount amount--home">
-    <span class="amount__output--home"></span>
-    <span class="amount__currency--home"></span>
-  </section>
-</div>
+<div class="overlay"></div>
 
 <script src="lib/localforage.min.js"></script>
 <script src="script.js"></script>
+
+</body>
+</html>
