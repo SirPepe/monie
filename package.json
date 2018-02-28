@@ -1,0 +1,11 @@
+{
+  "name": "monie",
+  "version": "0.0.0",
+  "main": "index.html",
+  "repository": "git@github.com:SirPepe/monie.git",
+  "author": "Peter Kröner <peter@peterkroener.de>",
+  "license": "MIT",
+  "dependencies": {
+    "http-proxy": "^1.16.2"
+  }
+}
