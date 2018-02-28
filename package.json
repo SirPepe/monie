@@ -6,6 +6,8 @@
   "author": "Peter Kröner <peter@peterkroener.de>",
   "license": "MIT",
   "dependencies": {
-    "http-proxy": "^1.16.2"
+    "finalhandler": "^1.1.0",
+    "http-proxy": "^1.16.2",
+    "serve-static": "^1.13.2"
   }
 }
