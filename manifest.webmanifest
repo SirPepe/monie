@@ -39,5 +39,6 @@
       "src": "img/icon384.png",
       "sizes": "384x384",
       "type": "image/png"
-    }]
+    }],
+    "gcm_sender_id": "38079069127"
   }

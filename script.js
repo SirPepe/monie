@@ -1,4 +1,4 @@
-(function(){
+(() => {
 "use strict";
 
 
@@ -44,7 +44,7 @@ const currencies = new Map([
 // The currency data comes from the European Central Bank and only contains
 // exchange rates relative to the euro. Use this function to get the rate from
 // one any currency to any another
-function convertRelative (rates, from, to, base = "EUR") {
+const convertRelative = (rates, from, to, base = "EUR") => {
   if (to === base && from === base) {
     return 1;
   } else {
@@ -60,19 +60,19 @@ function convertRelative (rates, from, to, base = "EUR") {
 
 
 // Get the first element matching "selector"
-function $ (selector, context = window.document) {
+const $ = (selector, context = window.document) => {
   return context.querySelector(selector);
 }
 
 
 // An array of elements matching "selector"
-function $$ (selector, context = window.document) {
+const $$ = (selector, context = window.document) => {
   return Array.from(context.querySelectorAll(selector));
 }
 
 
 // Create a new element, eg. createElement("a", { href: "/", innerHTML: "foo" })
-function createElement(tag, properties) {
+const createElement = (tag, properties) => {
   const element = window.document.createElement(tag);
   Object.assign(element, properties);
   return element;
@@ -82,7 +82,7 @@ function createElement(tag, properties) {
 // Add one ore more event handlers to one ore more events (string separated by
 // whitespace) to one or more elements, eg. on(myDiv, "click keydown", doStuff)
 // or on([ myInput, mySelect ], "change", doStuff, doOtherStuff)
-function on (elements, events, ...handlers) {
+const on = (elements, events, ...handlers) => {
   if (!Array.isArray(elements)) {
     return on([ elements ], events, ...handlers);
   }
@@ -98,7 +98,7 @@ function on (elements, events, ...handlers) {
 
 
 // Create option elements for the select elements from the currencies
-function createOptionElements (currencies) {
+const createOptionElements = (currencies) => {
   return Array.from(currencies)
     .map( ([ code, { name } ]) => createElement("option", {
       innerHTML: `${name} (${code})`,
@@ -162,19 +162,19 @@ on(overlay, "click", () => {
 
 localforage.config({ name: "monie", storeName: "cache", });
 
-async function saveInput (travelCurrency, homeCurrency, travelAmount) {
+const saveInput = async (travelCurrency, homeCurrency, travelAmount) => {
   const latestInput = { travelCurrency, homeCurrency, travelAmount };
   return localforage.setItem("input", latestInput);
 }
 
-async function restoreInput () {
+const restoreInput = async () => {
   const lastInput = await localforage.getItem("input");
   if (!lastInput) {
     // Use default values if nothing has been stored so far
     return {
       travelCurrency: "GBP",
       homeCurrency: "EUR",
-      travelAmount: 1,
+      travelAmount: 100,
     };
   }
   return lastInput;
@@ -182,22 +182,21 @@ async function restoreInput () {
 
 
 // Fetch rates. If this is a refresh, add "?refresh=true" to the url
-async function getRates (refreshing = false) {
+const getRates = async ({ refresh = false }) => {
   let url = "api/latest.json";
-  if (refreshing) {
+  if (refresh) {
     url += "?refresh=true";
   }
   const response = await fetch(url);
-  if (response.ok) {
-    return response.json();
-  } else {
+  if (!response.ok) {
     throw new Error(`Request failed with status code ${ response.staus }`)
   }
+  return await response.json();
 }
 
 
 // Compute exchange rates from current inputs and rates passed to the function
-function calculateRates (rates) {
+const calculateRates = (rates) => {
   const travelCurrency = travelCurrencyInput.value;
   const homeCurrency = homeCurrencyInput.value;
   const rate = convertRelative(rates.rates, travelCurrency, homeCurrency);
@@ -208,7 +207,7 @@ function calculateRates (rates) {
 
 
 // Apply new data to the dom
-async function applyChanges (data) {
+const applyChanges = async (data) => {
   const { travelCurrency, homeCurrency, travelAmount, homeAmount } = data;
   travelCurrencyOutput.innerHTML = travelCurrency;
   homeAmountOutput.innerHTML = homeAmount.toFixed(2);
@@ -219,11 +218,12 @@ async function applyChanges (data) {
 
 
 // Handle a click on the refresh link
-async function handleRefreshClick () {
+const handleRefreshClick = async () => {
+  window.Notification.requestPermission();
   if (!refreshButton.classList.contains("refresh--working")) {
     refreshButton.classList.add("refresh--working");
     try {
-      return getRates(true);
+      return getRates({ refresh: true });
     } finally {
       refreshButton.classList.remove("refresh--working");
     }
@@ -231,46 +231,114 @@ async function handleRefreshClick () {
 }
 
 
-function init (rates, lastInput) {
+// Subscribe to messages from the service worker
+if ("serviceWorker" in window.navigator) {
+  window.navigator.serviceWorker.addEventListener("message", async (evt) => {
+    // Recieved a push notification that new rates are available
+    if (evt.data.type === "NEW_RATES") {
+      const newRates = await getRates({ refresh: true });
+      applyChanges(calculateRates(newRates));
+    }
+  });
+}
+
+
+const init = (rates, lastInput) => {
+
   // Set the inputs and selects to the last saved state
   travelCurrencyInput.value = lastInput.travelCurrency;
   homeCurrencyInput.value = lastInput.homeCurrency;
   travelAmountInput.value = lastInput.travelAmount;
+
   // Calculate and display the rates for the first time
   applyChanges(calculateRates(rates));
+
   // Setup event handlers for inputs and selects
   const elements = [ travelCurrencyInput, homeCurrencyInput, travelAmountInput ];
   on(elements, "keyup click change", () => applyChanges(calculateRates(rates)) );
+
   // Enable rate refresh
   on(refreshButton, "click", async (evt) => {
     const newRates = await handleRefreshClick();
     applyChanges(calculateRates(newRates));
   });
+
   // Display the app
   document.body.classList.add("loaded");
+
 }
 
 
 // Initialize with the rates and data from the cache
-Promise.all([ getRates(), restoreInput() ])
+Promise.all([ getRates({ refresh: false }), restoreInput() ])
   .then( ([ rates, lastInput ]) => init(rates, lastInput) )
   .catch( (reason) => window.alert(reason) );
 
 
-// Launch the service worker and request permission for notifications once
+// Subscribe to push notifications
+const subscribeToPushNotifications = async (registration) => {
+  let subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true
+    });
+  }
+  const { key, authSecret, endpoint } = getSubscriptionInfo(subscription);
+  const result = await postSubscripionInfo({ key, authSecret, endpoint });
+  if (result) {
+    console.log("Registered to recieve push notifications");
+  } else {
+    console.log("Failed to register for push notifications");
+  }
+};
+
+const getSubscriptionInfo = (subscription) => {
+  const rawKey = subscription.getKey("p256dh");
+  const key = btoa(String.fromCharCode(...new Uint8Array(rawKey)));
+  const rawAuthSecret = subscription.getKey("auth");
+  const authSecret = btoa(String.fromCharCode(...new Uint8Array(rawAuthSecret)));
+  const endpoint = subscription.endpoint;
+  return { key, authSecret, endpoint };
+};
+
+const postSubscripionInfo = async (data) => {
+  try {
+    const response = await fetch("/push-register", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "content-type": "application/json" },
+    });
+    if (!response.ok) {
+      throw new Error(`Post failed: ${ response.status }`);
+    }
+  } catch (err) {
+    return false;
+  }
+  return true;
+};
+
+
+// Launch the service worker and subscribe to push notifications notifications once
 // everything else is done
 on(window, "load", async () => {
-  window.Notification.requestPermission();
-  const registration = await window.navigator.serviceWorker.register("worker.js");
-  // Is there's no active service worker this is the first installation
-  if (!registration.active) {
-    if (window.Notification.permission === "granted") {
+  if ("serviceWorker" in window.navigator) {
+
+    const registration = await window.navigator.serviceWorker.register("worker.js");
+
+    // If there's no active service worker this is the first installation
+    if (!registration.active && window.Notification.permission === "granted") {
       new Notification("Ready for offline use", {
         icon: "img/icon192.png",
         badge: "img/icon48-mono.png",
         body: "You can use this web app at any time, even when you're offline.",
+        tag: "installed",
       });
     }
+
+    // Subscribe to push
+    await window.navigator.serviceWorker.ready;
+    subscribeToPushNotifications(registration);
+
   }
 });
 

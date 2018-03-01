@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_ID = "monie-v54";
+const CACHE_ID = "monie-v56";
 
 const FILES = [
   "./", "index.html", "script.js", "style.css",
@@ -10,8 +10,8 @@ const FILES = [
   "favicon.ico", "manifest.webmanifest",
 ];
 
-async function notify (title, data) {
-  if (self.Notification.permission === "granted") {
+const notify = async (title, data = {}) => {
+  if (self.registration && self.Notification.permission === "granted") {
     const notification = Object.assign({}, {
       icon: "img/icon192.png",
       badge: "img/icon48-mono.png",
@@ -20,14 +20,16 @@ async function notify (title, data) {
   }
 }
 
-async function handleInstallation (evt) {
+const handleInstallation = async (evt) => {
   console.log(`Installing ${CACHE_ID}`);
   const cache = await caches.open(CACHE_ID);
   const installation = await cache.addAll(FILES);
   // Is there already a service worker (= a previous version) running?
+  // Then this is an upgrade
   if (self.registration.active) {
     notify(`New version ${CACHE_ID} available`, {
-      body: "Close all instances of the app to apply the update"
+      body: "Close all instances of the app to apply the update",
+      tag: "installed",
     });
   }
   return installation;
@@ -35,7 +37,7 @@ async function handleInstallation (evt) {
 
 self.addEventListener("install", (evt) => evt.waitUntil(handleInstallation(evt)) );
 
-async function handleActivation () {
+const handleActivation = async () => {
   console.log(`Activating ${CACHE_ID}`);
   self.clients.claim(); // to get notifications when requesting new rates from the start
   const cacheKeys = await self.caches.keys();
@@ -45,35 +47,47 @@ async function handleActivation () {
 
 self.addEventListener("activate", (evt) => evt.waitUntil(handleActivation()) );
 
-
-async function refreshRates (request) {
-  const [ cache, response ] = await Promise.all([
-    caches.open(CACHE_ID), fetch(request),
-  ]);
-  if (response.ok) {
-    // overwrite old response to "api/latest.json"
-    await cache.put(new Request("api/latest.json"), response.clone());
-    return { updated: true, response };
-  } else {
-    return { updated: false, response: cache.match("api/latest.json") };
-  }
-}
-
-
-async function serveFromCache (evt) {
-  console.log(`Serving ${evt.request.url} from cache ${CACHE_ID}`);
-  const cache = await caches.open(CACHE_ID);
-  if (evt.request.url.endsWith("api/latest.json?refresh=true")) {
-    console.log(`Updating rates...`);
-    const { response, updated } = await refreshRates(evt.request);
-    if (updated) {
-      notify("Rates updated", { body: `Successfully requested new rates` });
-    } else {
-      notify("Failed to update rates", { body: `Rate request failed with code ${response.status}` });
+const handleRefresh = async () => {
+  try {
+    const response = await fetch("api/latest.json");
+    if (!response.ok) {
+      throw new Error(`Rate request failed with code ${ response.status }`)
     }
+    // overwrite old response to "api/latest.json"
+    const cache = await caches.open(CACHE_ID);
+    await cache.put(new Request("api/latest.json"), response.clone());
+    notify("Rates updated", { body: `Successfully requested new rates`, tag: "rates" });
     return response;
+  } catch (err) {
+    notify("Failed to update rates", { body: err, tag: "rates" });
+    return self.caches.match("api/latest.json");
   }
-  return cache.match(evt.request);
+};
+
+const handleFetch = async (evt) => {
+  const cache = await caches.open(CACHE_ID);
+  if (evt.request.url.endsWith("/api/latest.json?refresh=true")) {
+    return handleRefresh();
+  }
+  if (evt.request.url.endsWith("/push-register") && evt.request.method === "POST") {
+    return fetch(evt.request);
+  }
+  const fromCache = await cache.match(evt.request);
+  return fromCache;
 }
 
-self.addEventListener("fetch", (evt) => evt.respondWith(serveFromCache(evt)) );
+self.addEventListener("fetch", (evt) => evt.respondWith(handleFetch(evt)) );
+
+const handlePush = async (evt) => {
+  const payload = (evt.data) ? evt.data.json() : null;
+  if (payload) {
+    const clients = await self.clients.matchAll();
+    for (const client of clients) {
+      client.postMessage(payload);
+    }
+    return notify("New Rates available", { tag: "newRates" });
+  }
+};
+
+
+self.addEventListener("push", (evt) => evt.waitUntil(handlePush(evt)) );
