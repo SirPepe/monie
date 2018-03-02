@@ -1,9 +1,9 @@
 "use strict";
 
-const CACHE_ID = "monie-v56";
+const CACHE_ID = "monie-v58";
 
 const FILES = [
-  "./", "index.html", "script.js", "style.css",
+  "./", "script.js", "style.css",
   "api/latest.json", "lib/localforage.min.js",
   "img/icon48.png", "img/icon48-mono.png", "img/icon72.png", "img/icon96.png",
   "img/icon144.png", "img/icon168.png", "img/icon192.png", "img/icon384.png",
