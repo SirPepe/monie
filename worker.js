@@ -10,6 +10,8 @@ const FILES = [
   "favicon.ico", "manifest.webmanifest",
 ];
 
+
+// Convenience function for notifications
 const notify = async (title, data = {}) => {
   if (self.registration && self.Notification.permission === "granted") {
     const notification = Object.assign({}, {
@@ -20,10 +22,11 @@ const notify = async (title, data = {}) => {
   }
 }
 
+
 const handleInstallation = async (evt) => {
   console.log(`Installing ${CACHE_ID}`);
   const cache = await caches.open(CACHE_ID);
-  const installation = await cache.addAll(FILES);
+  const installationResult = await cache.addAll(FILES);
   // Is there already a service worker (= a previous version) running?
   // Then this is an upgrade
   if (self.registration.active) {
@@ -32,14 +35,15 @@ const handleInstallation = async (evt) => {
       tag: "installed",
     });
   }
-  return installation;
+  return installationResult;
 }
 
 self.addEventListener("install", (evt) => evt.waitUntil(handleInstallation(evt)) );
 
+
 const handleActivation = async () => {
   console.log(`Activating ${CACHE_ID}`);
-  self.clients.claim(); // to get notifications when requesting new rates from the start
+  self.clients.claim(); // to enable notifications when requesting new rates from the start
   const cacheKeys = await self.caches.keys();
   const toDelete = cacheKeys.filter( (key) => key !== CACHE_ID );
   return Promise.all(toDelete.map( (key) => self.caches.delete(key) ));
@@ -47,12 +51,17 @@ const handleActivation = async () => {
 
 self.addEventListener("activate", (evt) => evt.waitUntil(handleActivation()) );
 
+
+// Update a single cache item
 const updateCache = async (request, response) => {
   const clone = response.clone();
   const cache = await caches.open(CACHE_ID);
   return await cache.put(request, clone);
 };
 
+
+// Handle requests for new Rates. Attempt to get rates from the network, fall
+// back to cache if something goes wrong
 const handleRefresh = async () => {
   try {
     const response = await fetch("api/latest.json");
@@ -69,6 +78,9 @@ const handleRefresh = async () => {
   }
 };
 
+
+// Handle all requests with special cases for push message registration and
+// rate refreshes
 const handleFetch = async (evt) => {
   const cache = await caches.open(CACHE_ID);
   if (evt.request.url.endsWith("/api/latest.json?refresh=true")) {
@@ -82,16 +94,21 @@ const handleFetch = async (evt) => {
 
 self.addEventListener("fetch", (evt) => evt.respondWith(handleFetch(evt)) );
 
+
+// Notify clients on push
 const handlePush = async (evt) => {
   const payload = (evt.data) ? evt.data.json() : null;
-  if (payload) {
+  if (payload && payload.type === "NEW_RATES") {
     const clients = await self.clients.matchAll();
     for (const client of clients) {
       client.postMessage(payload);
     }
     return notify("New Rates available", { tag: "newRates" });
+  } else {
+    return notify("Recieved push notification", {
+      body: JSON.stringify(payload),
+    });
   }
 };
-
 
 self.addEventListener("push", (evt) => evt.waitUntil(handlePush(evt)) );
