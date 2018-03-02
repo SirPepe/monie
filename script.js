@@ -277,18 +277,18 @@ Promise.all([ getRates({ refresh: false }), restoreInput() ])
 
 // Subscribe to push notifications
 const subscribeToPushNotifications = async (registration) => {
-  let subscription = await registration.pushManager.getSubscription();
-  if (!subscription) {
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true
-    });
-  }
-  const { key, authSecret, endpoint } = getSubscriptionInfo(subscription);
-  const result = await postSubscripionInfo({ key, authSecret, endpoint });
-  if (result) {
+  try {
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true
+      });
+    }
+    const { key, authSecret, endpoint } = getSubscriptionInfo(subscription);
+    await postSubscripionInfo({ key, authSecret, endpoint });
     console.log("Registered to recieve push notifications");
-  } else {
-    console.log("Failed to register for push notifications");
+  } catch (err) {
+    console.log(`Failed to register for push notifications: ${err}`);
   }
 };
 
@@ -302,19 +302,14 @@ const getSubscriptionInfo = (subscription) => {
 };
 
 const postSubscripionInfo = async (data) => {
-  try {
-    const response = await fetch("/push-register", {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: { "content-type": "application/json" },
-    });
-    if (!response.ok) {
-      throw new Error(`Post failed: ${ response.status }`);
-    }
-  } catch (err) {
-    return false;
+  const response = await fetch("/push-register", {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: { "content-type": "application/json" },
+  });
+  if (!response.ok) {
+    throw new Error(`Post failed: ${ response.status }`);
   }
-  return true;
 };
 
 
