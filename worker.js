@@ -47,17 +47,22 @@ const handleActivation = async () => {
 
 self.addEventListener("activate", (evt) => evt.waitUntil(handleActivation()) );
 
+const updateCache = async (request, response) => {
+  const clone = response.clone();
+  const cache = await caches.open(CACHE_ID);
+  return await cache.put(request, clone);
+};
+
 const handleRefresh = async () => {
   try {
     const response = await fetch("api/latest.json");
-    if (!response.ok) {
+    if (response.ok) {
+      updateCache("api/latest.json", response);
+      notify("Rates updated", { body: `Successfully requested new rates`, tag: "rates" });
+      return response;
+    } else {
       throw new Error(`Rate request failed with code ${ response.status }`)
     }
-    // overwrite old response to "api/latest.json"
-    const cache = await caches.open(CACHE_ID);
-    await cache.put(new Request("api/latest.json"), response.clone());
-    notify("Rates updated", { body: `Successfully requested new rates`, tag: "rates" });
-    return response;
   } catch (err) {
     notify("Failed to update rates", { body: err, tag: "rates" });
     return self.caches.match("api/latest.json");
@@ -72,8 +77,7 @@ const handleFetch = async (evt) => {
   if (evt.request.url.endsWith("/push-register") && evt.request.method === "POST") {
     return fetch(evt.request);
   }
-  const fromCache = await cache.match(evt.request);
-  return fromCache;
+  return await cache.match(evt.request);
 }
 
 self.addEventListener("fetch", (evt) => evt.respondWith(handleFetch(evt)) );
