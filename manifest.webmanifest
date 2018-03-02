@@ -1,5 +1,5 @@
 {
-    "name": "Monie",
+    "name": "Monie Exchange Rate Calculator",
     "short_name": "Monie",
     "start_url": "./",
     "display": "standalone",
