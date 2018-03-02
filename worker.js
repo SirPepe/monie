@@ -43,7 +43,7 @@ const handleActivation = async () => {
   const cacheKeys = await self.caches.keys();
   const toDelete = cacheKeys.filter( (key) => key !== CACHE_ID );
   return Promise.all(toDelete.map( (key) => self.caches.delete(key) ));
-}
+};
 
 self.addEventListener("activate", (evt) => evt.waitUntil(handleActivation()) );
 
