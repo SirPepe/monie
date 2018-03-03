@@ -100,6 +100,7 @@ self.addEventListener("fetch", (evt) => evt.respondWith(handleFetch(evt)) );
 const handlePush = async (evt) => {
   const payload = (evt.data) ? evt.data.json() : null;
   if (payload && payload.type === "NEW_RATES") {
+    const notification = notify("New Rates available", { tag: "rates" });
     const newRatesResponse = await handleRefresh();
     const newRates = await newRatesResponse.json();
     const clients = await self.clients.matchAll();
@@ -109,7 +110,7 @@ const handlePush = async (evt) => {
         payload: newRates,
       });
     }
-    return notify("New Rates available", { tag: "newRates" });
+    return notification;
   } else {
     return notify("Recieved push notification", {
       body: JSON.stringify(payload),
