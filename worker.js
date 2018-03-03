@@ -82,13 +82,14 @@ const handleRefresh = async () => {
 // Handle all requests with special cases for push message registration and
 // rate refreshes
 const handleFetch = async (evt) => {
-  const cache = await caches.open(CACHE_ID);
-  if (evt.request.url.endsWith("/api/latest.json?refresh=true")) {
+  const url = new URL(evt.request.url);
+  if (url.pathname === "/api/latest.json" && url.searchParams.get("refresh") === "true") {
     return handleRefresh();
   }
-  if (evt.request.url.endsWith("/push-register") && evt.request.method === "POST") {
+  if (evt.request.method === "POST" && url.pathname === "/push-register") {
     return fetch(evt.request);
   }
+  const cache = await caches.open(CACHE_ID);
   return await cache.match(evt.request);
 }
 
