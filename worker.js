@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_ID = "monie-v58";
+const CACHE_ID = "monie-v59";
 
 const FILES = [
   "./", "script.js", "style.css",
@@ -100,9 +100,14 @@ self.addEventListener("fetch", (evt) => evt.respondWith(handleFetch(evt)) );
 const handlePush = async (evt) => {
   const payload = (evt.data) ? evt.data.json() : null;
   if (payload && payload.type === "NEW_RATES") {
+    const newRatesResponse = await handleRefresh();
+    const newRates = await newRatesResponse.json();
     const clients = await self.clients.matchAll();
     for (const client of clients) {
-      client.postMessage(payload);
+      client.postMessage({
+        type: "NEW_RATES",
+        payload: newRates,
+      });
     }
     return notify("New Rates available", { tag: "newRates" });
   } else {

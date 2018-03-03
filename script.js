@@ -233,10 +233,10 @@ const handleRefreshClick = async () => {
 
 // Subscribe to messages from the service worker
 if ("serviceWorker" in window.navigator) {
-  window.navigator.serviceWorker.addEventListener("message", async (evt) => {
+  window.navigator.serviceWorker.addEventListener("message", (evt) => {
     // Recieved a push notification that new rates are available
     if (evt.data.type === "NEW_RATES") {
-      const newRates = await getRates({ refresh: true });
+      const newRates = evt.data.payload;
       applyChanges(calculateRates(newRates));
     }
   });
