@@ -24,7 +24,7 @@ const notify = async (title, data = {}) => {
 
 
 const handleInstallation = async (evt) => {
-  console.log(`Installing ${CACHE_ID}`);
+  console.log(`Installing version ${CACHE_ID}`);
   const cache = await caches.open(CACHE_ID);
   const installationResult = await cache.addAll(FILES);
   // Is there already a service worker (= a previous version) running?
@@ -38,7 +38,8 @@ const handleInstallation = async (evt) => {
   return installationResult;
 }
 
-self.addEventListener("install", (evt) => evt.waitUntil(handleInstallation(evt)) );
+self.addEventListener("install",
+  (evt) => evt.waitUntil(handleInstallation(evt)) );
 
 
 const handleActivation = async () => {
@@ -49,7 +50,8 @@ const handleActivation = async () => {
   return Promise.all(toDelete.map( (key) => self.caches.delete(key) ));
 };
 
-self.addEventListener("activate", (evt) => evt.waitUntil(handleActivation()) );
+self.addEventListener("activate",
+  (evt) => evt.waitUntil(handleActivation()) );
 
 
 // Update a single cache item
@@ -82,11 +84,11 @@ const handleRefresh = async () => {
 // Handle all requests with special cases for push message registration and
 // rate refreshes
 const handleFetch = async (evt) => {
-  const url = new URL(evt.request.url);
-  if (url.pathname === "/api/latest.json" && url.searchParams.get("refresh") === "true") {
+  const { pathname, searchParams } = new URL(evt.request.url);
+  if (pathname === "/api/latest.json" && searchParams.get("refresh") === "true") {
     return handleRefresh();
   }
-  if (evt.request.method === "POST" && url.pathname === "/push-register") {
+  if (evt.request.method === "POST" && pathname === "/push-register") {
     return fetch(evt.request);
   }
   const cache = await caches.open(CACHE_ID);
