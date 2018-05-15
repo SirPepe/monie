@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_ID = "monie-v59";
+const CACHE_ID = "monie-v61";
 
 const FILES = [
   "./", "script.js", "style.css",
@@ -11,14 +11,28 @@ const FILES = [
 ];
 
 
-// Convenience function for notifications
+const asCacheUrl = (url) => {
+  return new Promise( async (resolve) => {
+    const response = await caches.match(url);
+    const blob = await response.blob();
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
+
+
+const asCacheUrls = (urls) => Promise.all(urls.map( (url) => asCacheUrl(url) ));
+
+
 const notify = async (title, data = {}) => {
   if (self.registration && self.Notification.permission === "granted") {
-    const notification = Object.assign({}, {
-      icon: "img/icon192.png",
-      badge: "img/icon48-mono.png",
-    }, data);
-    return self.registration.showNotification(title, notification);
+    const [ icon, badge ] = await asCacheUrls([
+      "img/icon192.png", "img/icon48-mono.png"
+    ]);
+    const options = Object.assign({ icon, badge, }, data);
+    const notification = self.registration.showNotification(title, options);
+    return notification;
   }
 }
 
@@ -43,11 +57,15 @@ self.addEventListener("install",
 
 
 const handleActivation = async () => {
-  console.log(`Activating ${CACHE_ID}`);
-  self.clients.claim(); // to enable notifications when requesting new rates from the start
+  console.log(`Activating version ${CACHE_ID}`);
+  // claiming to enable notifications when requesting new rates from the start
+  const claim = self.clients.claim();
   const cacheKeys = await self.caches.keys();
   const toDelete = cacheKeys.filter( (key) => key !== CACHE_ID );
-  return Promise.all(toDelete.map( (key) => self.caches.delete(key) ));
+  return Promise.all([
+    claim,
+    ...toDelete.map( (key) => self.caches.delete(key) ),
+  ]);
 };
 
 self.addEventListener("activate",
@@ -68,14 +86,20 @@ const handleRefresh = async () => {
   try {
     const response = await fetch("api/latest.json");
     if (response.ok) {
-      updateCache("api/latest.json", response);
-      notify("Rates updated", { body: `Successfully requested new rates`, tag: "rates" });
+      await updateCache("api/latest.json", response);
+      notify("Rates updated", {
+        body: `Successfully loaded new rates`,
+        tag: "rates",
+      });
       return response;
     } else {
       throw new Error(`Rate request failed with code ${ response.status }`)
     }
   } catch (err) {
-    notify("Failed to update rates", { body: err, tag: "rates" });
+    notify("Failed to update rates", {
+      body: err.message,
+      tag: "rates",
+    });
     return self.caches.match("api/latest.json");
   }
 };
