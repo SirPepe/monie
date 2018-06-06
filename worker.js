@@ -5,8 +5,9 @@ const CACHE_ID = "monie-v64";
 const FILES = [
   "./", "script.js", "style.css",
   "api/latest.json", "lib/localforage.min.js",
-  "img/icon48.png", "img/icon72.png", "img/icon96.png",
-  "img/icon144.png", "img/icon168.png", "img/icon192.png", "img/icon384.png",
+  "img/icon48.png", "img/icon72.png", "img/icon96.png", "img/icon120.png",
+  "img/icon144.png", "img/icon152.png", "img/icon167.png", "img/icon168.png",
+  "img/icon180.png", "img/icon192.png", "img/icon384.png",
   "img/badge.png", "favicon.ico", "manifest.webmanifest",
 ];
 
