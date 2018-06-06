@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_ID = "monie-v61";
+const CACHE_ID = "monie-v62";
 
 const FILES = [
   "./", "script.js", "style.css",
@@ -14,6 +14,11 @@ const FILES = [
 const asCacheUrl = (url) => {
   return new Promise( async (resolve) => {
     const response = await caches.match(url);
+    // If there's no cache entry to be found, resolve with the real url as a
+    // fallback for the data url from the cache
+    if (!response) {
+      return resolve(url);
+    }
     const blob = await response.blob();
     const reader = new FileReader();
     reader.onloadend = () => resolve(reader.result);
