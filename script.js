@@ -109,6 +109,7 @@ const createOptionElements = (currencies) => {
 
 // DOM elements
 const hamburgerButton      = $(".header__hamburger a");
+const swStatus             = $(".swstatus");
 const overlay              = $(".overlay");
 const travelCurrencyInput  = $(".currency__select--travel");
 const homeCurrencyInput    = $(".currency__select--home");
@@ -234,11 +235,19 @@ const handleRefreshClick = async () => {
 // Subscribe to messages from the service worker
 if ("serviceWorker" in window.navigator) {
   window.navigator.serviceWorker.addEventListener("message", (evt) => {
+
     // Recieved a push notification that new rates are available
     if (evt.data.type === "NEW_RATES") {
       const newRates = evt.data.payload;
       applyChanges(calculateRates(newRates));
     }
+
+    // Recieved a status message with the service worker version
+    if (evt.data.type === "STATUS_INFO") {
+      const statusMessage = `Service worker version: ${ evt.data.payload.version }`;
+      swStatus.innerHTML = statusMessage;
+    }
+
   });
 }
 
@@ -324,10 +333,15 @@ on(window, "load", async () => {
     if (!registration.active && window.Notification.permission === "granted") {
       new Notification("Ready for offline use", {
         icon: "img/icon192.png",
-        badge: "img/icon48-mono.png",
+        badge: "img/badge.png",
         body: "You can use this web app at any time, even when you're offline.",
         tag: "installed",
       });
+    }
+
+    // Request status info from the active registration
+    if (registration.active) {
+      registration.active.postMessage({ type: "REQUEST_STATUS_INFO" });
     }
 
     // Subscribe to push

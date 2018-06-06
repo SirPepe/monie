@@ -1,13 +1,13 @@
 "use strict";
 
-const CACHE_ID = "monie-v62";
+const CACHE_ID = "monie-v64";
 
 const FILES = [
   "./", "script.js", "style.css",
   "api/latest.json", "lib/localforage.min.js",
-  "img/icon48.png", "img/icon48-mono.png", "img/icon72.png", "img/icon96.png",
+  "img/icon48.png", "img/icon72.png", "img/icon96.png",
   "img/icon144.png", "img/icon168.png", "img/icon192.png", "img/icon384.png",
-  "favicon.ico", "manifest.webmanifest",
+  "img/badge.png", "favicon.ico", "manifest.webmanifest",
 ];
 
 
@@ -33,7 +33,7 @@ const asCacheUrls = (urls) => Promise.all(urls.map( (url) => asCacheUrl(url) ));
 const notify = async (title, data = {}) => {
   if (self.registration && self.Notification.permission === "granted") {
     const [ icon, badge ] = await asCacheUrls([
-      "img/icon192.png", "img/icon48-mono.png"
+      "img/icon192.png", "img/badge.png"
     ]);
     const options = Object.assign({ icon, badge, }, data);
     const notification = self.registration.showNotification(title, options);
@@ -149,4 +149,18 @@ const handlePush = async (evt) => {
   }
 };
 
+
 self.addEventListener("push", (evt) => evt.waitUntil(handlePush(evt)) );
+
+
+self.addEventListener("message", (evt) => {
+  const client = evt.source;
+  if (evt.data.type === "REQUEST_STATUS_INFO") {
+    client.postMessage({
+      type: "STATUS_INFO",
+      payload: {
+        version: CACHE_ID,
+      },
+    });
+  }
+})

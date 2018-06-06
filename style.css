@@ -184,6 +184,10 @@ input:focus, select:focus {
   margin: 1rem;
 }
 
+.swstatus {
+  font-size: 0.8em;
+}
+
 .sidebar a {
   text-decoration: none;
 }
