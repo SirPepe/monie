@@ -61,6 +61,16 @@ input:focus, select:focus {
   outline: none;
 }
 
+label.disabled span.text {
+  text-decoration: line-through;
+}
+label.disabled::after {
+  content: "Notification permissions have been denied";
+  display: block;
+  font-size: 0.6em;
+  text-decoration: none !important;
+}
+
 .container {
   max-width: 960px;
   margin: 0 auto;

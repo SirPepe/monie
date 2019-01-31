@@ -114,6 +114,7 @@ const travelCurrencyOutput = $(".amount__currency--travel");
 const homeAmountOutput     = $(".amount__output--home");
 const homeCurrencyOutput   = $(".amount__currency--home");
 const refreshButton        = $(".refresh");
+const notificationCheckbox = $(".notifications");
 
 
 // Populate select elements
@@ -161,20 +162,28 @@ localforage.config({ name: "monie", storeName: "cache", });
 
 const saveInput = async (travelCurrency, homeCurrency, travelAmount) => {
   const latestInput = { travelCurrency, homeCurrency, travelAmount };
-  return localforage.setItem("input", latestInput);
+  return await localforage.setItem("input", latestInput);
+}
+
+const saveNotificationState = async (state) => {
+  return await localforage.setItem("notifications", state);
 }
 
 const restoreInput = async () => {
-  const lastInput = await localforage.getItem("input");
-  if (!lastInput) {
-    // Use default values if nothing has been stored so far
-    return {
-      travelCurrency: "GBP",
-      homeCurrency: "EUR",
-      travelAmount: 100,
-    };
+  let [ input, notifications ] = await Promise.all([
+    localforage.getItem("input"),
+    localforage.getItem("notifications"),
+  ]);
+  // Use default values if nothing has been stored so far
+  input = input || {
+    travelCurrency: "GBP",
+    homeCurrency: "EUR",
+    travelAmount: 100,
+  };
+  if (typeof notifications !== "boolean") {
+    notifications = window.Notification.permission === "granted";
   }
-  return lastInput;
+  return { ...input, notifications };
 }
 
 
@@ -214,9 +223,34 @@ const applyChanges = async (data) => {
 }
 
 
+//
+let notificationsEnabled;
+
+
+const setNotificationsState = async (value, postToWorker = true) => {
+  const permission = window.Notification.permission;
+  notificationsEnabled = value;
+  if (postToWorker && "serviceWorker" in window.navigator) {
+    const registration = await window.navigator.serviceWorker.getRegistration();
+    if (registration.active) {
+      registration.active.postMessage({
+        type: "SET_NOTIFICATION_PERMISSIONS",
+        payload: value,
+      });
+    }
+  }
+  await saveNotificationState(value);
+  notificationCheckbox.checked = (value && permission === "granted");
+}
+
+
 // Handle a click on the refresh link
 const handleRefreshClick = async () => {
-  window.Notification.requestPermission();
+  if (window.Notification.permission === "default") {
+    const permission = await window.Notification.requestPermission();
+    const permissionGranted = permission === "granted";
+    setNotificationsState(permissionGranted);
+  }
   if (!refreshButton.classList.contains("refresh--working")) {
     refreshButton.classList.add("refresh--working");
     try {
@@ -225,7 +259,18 @@ const handleRefreshClick = async () => {
       refreshButton.classList.remove("refresh--working");
     }
   }
-}
+};
+
+
+const handleNotificationCheckboxChange = async (event) => {
+  if (event.target.checked) {
+    const permission = await window.Notification.requestPermission();
+    const permissionGranted = (permission === "granted");
+    setNotificationsState(permissionGranted)
+  } else {
+    setNotificationsState(false);
+  }
+};
 
 
 // Subscribe to messages from the service worker
@@ -255,6 +300,25 @@ const init = (rates, lastInput) => {
   travelCurrencyInput.value = lastInput.travelCurrency;
   homeCurrencyInput.value = lastInput.homeCurrency;
   travelAmountInput.value = lastInput.travelAmount;
+  setNotificationsState(lastInput.notifications, false);
+
+  // If notification permissions have been denied, disable and uncheck
+  // the checkbox
+  if (window.Notification.permission === "denied") {
+    notificationCheckbox.setAttribute("disabled", true);
+    notificationCheckbox.checked = false;
+    notificationCheckbox.parentElement.classList.add("disabled");
+  }
+
+  // Notify the service worker about current notification state
+  window.navigator.serviceWorker.ready.then( (registration) => {
+    if (registration.active) {
+      registration.active.postMessage({
+        type: "SET_NOTIFICATION_PERMISSIONS",
+        payload: lastInput.notifications,
+      });
+    }
+  });
 
   // Calculate and display the rates for the first time
   applyChanges(calculateRates(rates));
@@ -269,6 +333,9 @@ const init = (rates, lastInput) => {
     applyChanges(calculateRates(newRates));
   });
 
+  //
+  on(notificationCheckbox, "change", handleNotificationCheckboxChange);
+
   // Display the app
   document.body.classList.add("loaded");
 
@@ -278,7 +345,10 @@ const init = (rates, lastInput) => {
 // Initialize with the rates and data from the cache
 Promise.all([ getRates({ refresh: false }), restoreInput() ])
   .then( ([ rates, lastInput ]) => init(rates, lastInput) )
-  .catch( (reason) => window.alert(reason) );
+  .catch( (reason) => {
+    window.alert(reason);
+    console.log(reason);
+  });
 
 
 // Subscribe to push notifications

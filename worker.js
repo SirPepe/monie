@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_ID = "monie-v64";
+const CACHE_ID = "monie-v65";
 
 const FILES = [
   "./", "script.js", "style.css",
@@ -31,8 +31,15 @@ const asCacheUrl = (url) => {
 const asCacheUrls = (urls) => Promise.all(urls.map( (url) => asCacheUrl(url) ));
 
 
+
+let userDefinedPermission;
+
+
 const notify = async (title, data = {}) => {
-  if (self.registration && self.Notification.permission === "granted") {
+  if (self.registration
+    && self.Notification.permission === "granted"
+    && userDefinedPermission === true
+  ) {
     const [ icon, badge ] = await asCacheUrls([
       "img/icon192.png", "img/badge.png"
     ]);
@@ -166,6 +173,10 @@ self.addEventListener("push", (evt) => evt.waitUntil(handlePush(evt)) );
 
 self.addEventListener("message", (evt) => {
   const client = evt.source;
+  if (evt.data.type === "SET_NOTIFICATION_PERMISSIONS") {
+    userDefinedPermission = evt.data.payload;
+    return;
+  }
   if (evt.data.type === "REQUEST_STATUS_INFO") {
     client.postMessage({
       type: "STATUS_INFO",
@@ -173,5 +184,6 @@ self.addEventListener("message", (evt) => {
         version: CACHE_ID,
       },
     });
+    return;
   }
 })
