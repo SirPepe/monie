@@ -265,10 +265,16 @@ const handleRefreshClick = async () => {
 const handleNotificationCheckboxChange = async (event) => {
   if (event.target.checked) {
     const permission = await window.Notification.requestPermission();
-    const permissionGranted = (permission === "granted");
-    setNotificationsState(permissionGranted)
-  } else {
-    setNotificationsState(false);
+    if (permission === "granted") {
+      setNotificationsState(true)
+      const registration = await window.navigator.serviceWorker.ready;
+      subscribeToPushNotifications(registration);
+      return;
+    }
+  }
+  setNotificationsState(false);
+  if (pushSubscription) {
+    await pushSubscription.unsubscribe();
   }
 };
 
@@ -310,8 +316,12 @@ const init = (rates, lastInput) => {
     notificationCheckbox.parentElement.classList.add("disabled");
   }
 
-  // Notify the service worker about current notification state
+  // Notify the service worker about current notification state and register a
+  // push subscription if notifications are allowed
   window.navigator.serviceWorker.ready.then( (registration) => {
+    if (window.Notification.permission === "granted" && lastInput.notifications) {
+      subscribeToPushNotifications(registration);
+    }
     if (registration.active) {
       registration.active.postMessage({
         type: "SET_NOTIFICATION_PERMISSIONS",
@@ -351,8 +361,13 @@ Promise.all([ getRates({ refresh: false }), restoreInput() ])
   });
 
 
+let pushSubscription;
+
 // Subscribe to push notifications
 const subscribeToPushNotifications = async (registration) => {
+  if (pushSubscription) {
+    return; // a subscription is already registered
+  }
   try {
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
@@ -363,6 +378,7 @@ const subscribeToPushNotifications = async (registration) => {
     const { key, authSecret, endpoint } = getSubscriptionInfo(subscription);
     await postSubscripionInfo({ key, authSecret, endpoint });
     console.log("Registered to recieve push notifications");
+    pushSubscription = subscription;
   } catch (err) {
     console.log(`Failed to register for push notifications: ${err}`);
   }
@@ -410,10 +426,6 @@ on(window, "load", async () => {
     if (registration.active) {
       registration.active.postMessage({ type: "REQUEST_STATUS_INFO" });
     }
-
-    // Subscribe to push
-    await window.navigator.serviceWorker.ready;
-    subscribeToPushNotifications(registration);
 
   }
 });
