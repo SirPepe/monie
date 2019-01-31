@@ -1,7 +1,3 @@
-(() => {
-"use strict";
-
-
 // Maps currency codes (eg. "EUR") to an object containing a currencies' name
 // (eg. "Euro") and symbol (eg. "€"). See https://tinyurl.com/jsmapdocs
 // for more information on maps.
@@ -350,6 +346,3 @@ on(window, "load", async () => {
 
   }
 });
-
-
-})();
