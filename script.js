@@ -223,7 +223,8 @@ const applyChanges = async (data) => {
 }
 
 
-//
+// true or false if the user has made a manual choice regarding notifications
+// in the app ui, undefined otherwise. Only changed by setNotificationsState()
 let notificationsEnabled;
 
 
@@ -270,11 +271,14 @@ const handleNotificationCheckboxChange = async (event) => {
       const registration = await window.navigator.serviceWorker.ready;
       subscribeToPushNotifications(registration);
       return;
+    } else {
+      setNotificationsState(false);
     }
-  }
-  setNotificationsState(false);
-  if (pushSubscription) {
-    await pushSubscription.unsubscribe();
+  } else {
+    setNotificationsState(false);
+    if (pushSubscription) {
+      await pushSubscription.unsubscribe();
+    }
   }
 };
 
@@ -343,7 +347,7 @@ const init = (rates, lastInput) => {
     applyChanges(calculateRates(newRates));
   });
 
-  //
+  // Notification checkbox
   on(notificationCheckbox, "change", handleNotificationCheckboxChange);
 
   // Display the app
