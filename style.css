@@ -61,14 +61,19 @@ input:focus, select:focus {
   outline: none;
 }
 
-label.disabled span.text {
+label.disabled span.text,
+label.not-supported span.text {
   text-decoration: line-through;
 }
 label.disabled::after {
   content: "Notification permissions have been denied";
   display: block;
   font-size: 0.6em;
-  text-decoration: none !important;
+}
+label.not-supported::after {
+  content: "Notifications are not supported";
+  display: block;
+  font-size: 0.6em;
 }
 
 .container {

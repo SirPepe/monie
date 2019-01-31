@@ -156,6 +156,10 @@ on(overlay, "click", () => {
 // document.body.classList.add("loaded");
 
 
+// For mobile Safari :(
+const supportsNotifications = "Notification" in window;
+
+
 // Save and restore the last inputs from local storage
 
 localforage.config({ name: "monie", storeName: "cache", });
@@ -181,7 +185,9 @@ const restoreInput = async () => {
     travelAmount: 100,
   };
   if (typeof notifications !== "boolean") {
-    notifications = window.Notification.permission === "granted";
+    notifications = (supportsNotifications)
+      ? window.Notification.permission === "granted"
+      : false;
   }
   return { ...input, notifications };
 }
@@ -229,6 +235,9 @@ let notificationsEnabled;
 
 
 const setNotificationsState = async (value, postToWorker = true) => {
+  if (!supportsNotifications) {
+    return;
+  }
   const permission = window.Notification.permission;
   notificationsEnabled = value;
   if (postToWorker && "serviceWorker" in window.navigator) {
@@ -247,7 +256,7 @@ const setNotificationsState = async (value, postToWorker = true) => {
 
 // Handle a click on the refresh link
 const handleRefreshClick = async () => {
-  if (window.Notification.permission === "default") {
+  if (supportsNotifications && window.Notification.permission === "default") {
     const permission = await window.Notification.requestPermission();
     const permissionGranted = permission === "granted";
     setNotificationsState(permissionGranted);
@@ -264,6 +273,9 @@ const handleRefreshClick = async () => {
 
 
 const handleNotificationCheckboxChange = async (event) => {
+  if (!supportsNotifications) {
+    return;
+  }
   if (event.target.checked) {
     const permission = await window.Notification.requestPermission();
     if (permission === "granted") {
@@ -312,9 +324,16 @@ const init = (rates, lastInput) => {
   travelAmountInput.value = lastInput.travelAmount;
   setNotificationsState(lastInput.notifications, false);
 
+  // If notifications are not supported, disable and uncheck the checkbox
+  if (!supportsNotifications) {
+    notificationCheckbox.setAttribute("disabled", true);
+    notificationCheckbox.checked = false;
+    notificationCheckbox.parentElement.classList.add("not-supported");
+  }
+
   // If notification permissions have been denied, disable and uncheck
   // the checkbox
-  if (window.Notification.permission === "denied") {
+  if (supportsNotifications && window.Notification.permission === "denied") {
     notificationCheckbox.setAttribute("disabled", true);
     notificationCheckbox.checked = false;
     notificationCheckbox.parentElement.classList.add("disabled");
@@ -323,7 +342,10 @@ const init = (rates, lastInput) => {
   // Notify the service worker about current notification state and register a
   // push subscription if notifications are allowed
   window.navigator.serviceWorker.ready.then( (registration) => {
-    if (window.Notification.permission === "granted" && lastInput.notifications) {
+    if (supportsNotifications
+      && window.Notification.permission === "granted"
+      && lastInput.notifications
+    ) {
       subscribeToPushNotifications(registration);
     }
     if (registration.active) {
