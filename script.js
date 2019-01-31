@@ -240,7 +240,8 @@ if ("serviceWorker" in window.navigator) {
 
     // Recieved a status message with the service worker version
     if (evt.data.type === "STATUS_INFO") {
-      const statusMessage = `Service worker version: ${ evt.data.payload.version }`;
+      const version = evt.data.payload.version;
+      const statusMessage = `Installed version: <b>${ version }</b>`;
       swStatus.innerHTML = statusMessage;
     }
 

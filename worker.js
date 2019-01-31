@@ -68,6 +68,16 @@ const handleActivation = async () => {
   const claim = self.clients.claim();
   const cacheKeys = await self.caches.keys();
   const toDelete = cacheKeys.filter( (key) => key !== CACHE_ID );
+  // post the service worker version to the ui in order to show the installed
+  // version in the sidebar
+  const clients = await self.clients.matchAll();
+  for (const client of clients) {
+    client.postMessage({
+      type: "STATUS_INFO",
+      payload: { version: CACHE_ID },
+    });
+  }
+  // Migrate and claim
   return Promise.all([
     claim,
     ...toDelete.map( (key) => self.caches.delete(key) ),
