@@ -294,6 +294,7 @@ const handleNotificationCheckboxChange = async (event) => {
       const registration = await window.navigator.serviceWorker.ready;
       const subscribed = await subscribeToPushNotifications(registration);
       if (!subscribed) {
+        window.alert("Failed to register for push notifications");
         setNotificationsState(false);
         return false;
       }
@@ -392,7 +393,6 @@ const init = (rates, lastInput) => {
   // Notification checkbox
   on(notificationCheckbox, "change", async (event) => {
     const success = await handleNotificationCheckboxChange(event);
-    console.log(success);
     if (!success) {
       notificationCheckbox.checked = !notificationCheckbox.checked;
     }
