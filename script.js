@@ -146,6 +146,16 @@ on(overlay, "click", () => {
   (sidebarOpened) ? closeSidebar() : null;
 });
 
+// Detect either the absence of the service worker API or a web page that's not
+// served from a secure or local origin
+if (!window.navigator.serviceWorker || !window.navigator.serviceWorker.ready) {
+  const { host, protocol } = window.location;
+  const reason = (host.startsWith("localhost") === false || protocol !== "https:")
+    ? `The web page is not secure or served from a non-localhost origin.`
+    : `You appear to be using an ancient browser.`;
+  throw new Error(`Service Worker API non-functional! ${ reason }`);
+}
+
 
 // =======================================================
 // Your code goes here! (and maybe into a service worker?)
@@ -383,7 +393,7 @@ Promise.all([ getRates({ refresh: false }), restoreInput() ])
   .then( ([ rates, lastInput ]) => init(rates, lastInput) )
   .catch( (reason) => {
     window.alert(reason);
-    console.log(reason);
+    console.error(reason);
   });
 
 
