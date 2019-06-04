@@ -281,18 +281,22 @@ const handleRefreshClick = async () => {
   }
 };
 
-
+// The boolean returned from this function indicates if the operation related
+// to the checkbox was successful
 const handleNotificationCheckboxChange = async (event) => {
   if (!supportsNotifications) {
-    return;
+    return false;
   }
   if (event.target.checked) {
     const permission = await window.Notification.requestPermission();
     if (permission === "granted") {
-      setNotificationsState(true)
+      setNotificationsState(true);
       const registration = await window.navigator.serviceWorker.ready;
-      subscribeToPushNotifications(registration);
-      return;
+      const subscribed = await subscribeToPushNotifications(registration);
+      if (!subscribed) {
+        setNotificationsState(false);
+        return false;
+      }
     } else {
       setNotificationsState(false);
     }
@@ -302,6 +306,7 @@ const handleNotificationCheckboxChange = async (event) => {
       await pushSubscription.unsubscribe();
     }
   }
+  return true;
 };
 
 
@@ -351,12 +356,17 @@ const init = (rates, lastInput) => {
 
   // Notify the service worker about current notification state and register a
   // push subscription if notifications are allowed
-  window.navigator.serviceWorker.ready.then( (registration) => {
+  window.navigator.serviceWorker.ready.then( async (registration) => {
     if (supportsNotifications
       && window.Notification.permission === "granted"
       && lastInput.notifications
     ) {
-      subscribeToPushNotifications(registration);
+      const subscribed = await subscribeToPushNotifications(registration);
+      if (!subscribed) {
+        setNotificationsState(false);
+      } else {
+        setNotificationsState(true);
+      }
     }
     if (registration.active) {
       registration.active.postMessage({
@@ -380,7 +390,13 @@ const init = (rates, lastInput) => {
   });
 
   // Notification checkbox
-  on(notificationCheckbox, "change", handleNotificationCheckboxChange);
+  on(notificationCheckbox, "change", async (event) => {
+    const success = await handleNotificationCheckboxChange(event);
+    console.log(success);
+    if (!success) {
+      notificationCheckbox.checked = !notificationCheckbox.checked;
+    }
+  });
 
   // Display the app
   document.body.classList.add("loaded");
@@ -402,7 +418,7 @@ let pushSubscription;
 // Subscribe to push notifications
 const subscribeToPushNotifications = async (registration) => {
   if (pushSubscription) {
-    return; // a subscription is already registered
+    return true; // a subscription is already registered
   }
   try {
     let subscription = await registration.pushManager.getSubscription();
@@ -413,10 +429,12 @@ const subscribeToPushNotifications = async (registration) => {
     }
     const { key, authSecret, endpoint } = getSubscriptionInfo(subscription);
     await postSubscripionInfo({ key, authSecret, endpoint });
-    console.log("Registered to recieve push notifications");
+    console.info("Registered to recieve push notifications");
     pushSubscription = subscription;
+    return true;
   } catch (err) {
-    console.log(`Failed to register for push notifications: ${err}`);
+    console.info(`Failed to register for push notifications: ${err}`);
+    return false;
   }
 };
 
