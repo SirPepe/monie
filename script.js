@@ -55,66 +55,29 @@ const convertRelative = (rates, from, to, base = "EUR") => {
 }
 
 
-// Get the first element matching "selector"
-const $ = (selector, context = window.document) => {
-  return context.querySelector(selector);
-}
-
-
-// An array of elements matching "selector"
-const $$ = (selector, context = window.document) => {
-  return Array.from(context.querySelectorAll(selector));
-}
-
-
-// Create a new element, eg. createElement("a", { href: "/", innerHTML: "foo" })
-const createElement = (tag, properties) => {
-  const element = window.document.createElement(tag);
-  Object.assign(element, properties);
-  return element;
-}
-
-
-// Add one ore more event handlers to one ore more events (string separated by
-// whitespace) to one or more elements, eg. on(myDiv, "click keydown", doStuff)
-// or on([ myInput, mySelect ], "change", doStuff, doOtherStuff)
-const on = (elements, events, ...handlers) => {
-  if (!Array.isArray(elements)) {
-    return on([ elements ], events, ...handlers);
-  }
-  events = events.split(/\s+/);
-  for (const element of elements) {
-    for (const event of events) {
-      for (const handler of handlers) {
-        element.addEventListener(event, handler);
-      }
-    }
-  }
-}
+// DOM elements
+const hamburgerButton      = document.querySelector(".header__hamburger a");
+const swStatus             = document.querySelector(".swstatus");
+const overlay              = document.querySelector(".overlay");
+const travelCurrencyInput  = document.querySelector(".currency__select--travel");
+const homeCurrencyInput    = document.querySelector(".currency__select--home");
+const travelAmountInput    = document.querySelector(".amount__input--travel");
+const travelCurrencyOutput = document.querySelector(".amount__currency--travel");
+const homeAmountOutput     = document.querySelector(".amount__output--home");
+const homeCurrencyOutput   = document.querySelector(".amount__currency--home");
+const refreshButton        = document.querySelector(".refresh");
+const notificationCheckbox = document.querySelector(".notifications");
 
 
 // Create option elements for the select elements from the currencies
 const createOptionElements = (currencies) => {
-  return Array.from(currencies)
-    .map( ([ code, { name } ]) => createElement("option", {
-      innerHTML: `${name} (${code})`,
-      value: code,
-    }) );
+  return Array.from(currencies, ([ code, { name } ]) => {
+    const element = document.createElement("option");
+    element.innerHTML = `${name} (${code})`;
+    element.value = code;
+    return element;
+  });
 }
-
-
-// DOM elements
-const hamburgerButton      = $(".header__hamburger a");
-const swStatus             = $(".swstatus");
-const overlay              = $(".overlay");
-const travelCurrencyInput  = $(".currency__select--travel");
-const homeCurrencyInput    = $(".currency__select--home");
-const travelAmountInput    = $(".amount__input--travel");
-const travelCurrencyOutput = $(".amount__currency--travel");
-const homeAmountOutput     = $(".amount__output--home");
-const homeCurrencyOutput   = $(".amount__currency--home");
-const refreshButton        = $(".refresh");
-const notificationCheckbox = $(".notifications");
 
 
 // Populate select elements
@@ -138,11 +101,11 @@ const closeSidebar = () => {
   sidebarOpened = false;
 }
 
-on(hamburgerButton, "click", () => {
+hamburgerButton.addEventListener("click", () => {
   (sidebarOpened) ? closeSidebar() : openSidebar();
 });
 
-on(overlay, "click", () => {
+overlay.addEventListener("click", () => {
   (sidebarOpened) ? closeSidebar() : null;
 });
 
@@ -381,17 +344,23 @@ const init = (rates, lastInput) => {
   applyChanges(calculateRates(rates));
 
   // Setup event handlers for inputs and selects
+  const handler = () => applyChanges(calculateRates(rates));
   const elements = [ travelCurrencyInput, homeCurrencyInput, travelAmountInput ];
-  on(elements, "keyup click change", () => applyChanges(calculateRates(rates)) );
+  const events = [ "keyup", "click", "change" ];
+  for (const element of elements) {
+    for (const event of events) {
+      element.addEventListener(event, handler);
+    }
+  }
 
   // Enable rate refresh
-  on(refreshButton, "click", async (evt) => {
+  refreshButton.addEventListener("click", async (evt) => {
     const newRates = await handleRefreshClick();
     applyChanges(calculateRates(newRates));
   });
 
   // Notification checkbox
-  on(notificationCheckbox, "change", async (event) => {
+  notificationCheckbox.addEventListener("change", async (event) => {
     const success = await handleNotificationCheckboxChange(event);
     if (!success) {
       notificationCheckbox.checked = !notificationCheckbox.checked;
@@ -407,9 +376,9 @@ const init = (rates, lastInput) => {
 // Initialize with the rates and data from the cache
 Promise.all([ getRates({ refresh: false }), restoreInput() ])
   .then( ([ rates, lastInput ]) => init(rates, lastInput) )
-  .catch( (reason) => {
-    window.alert(reason);
-    console.error(reason);
+  .catch( (o_O) => {
+    window.alert(o_O);
+    console.error(o_O);
   });
 
 
@@ -461,7 +430,7 @@ const postSubscripionInfo = async (data) => {
 
 // Launch the service worker and subscribe to push notifications notifications once
 // everything else is done
-on(window, "load", async () => {
+window.addEventListener("load", async () => {
   if ("serviceWorker" in window.navigator) {
 
     const registration = await window.navigator.serviceWorker.register("worker.js");
