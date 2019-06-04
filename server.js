@@ -1,5 +1,4 @@
 const fs = require("fs");
-const http = require("http");
 const express = require("express");
 const bodyParser = require("body-parser");
 const serveStatic = require("serve-static");
@@ -28,7 +27,7 @@ app.post("/push-register", (req, res) => {
 
 app.listen(3000, () => console.log("Server listening @ port 3000") );
 
-fs.watchFile(ratesSource, (current) => {
+fs.watchFile(ratesSource, () => {
   console.log("New rates detected...");
   if (subscriptionInfo) {
     console.log("Sending push message...");
