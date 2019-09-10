@@ -328,12 +328,7 @@ const init = (rates, lastInput) => {
       && window.Notification.permission === "granted"
       && lastInput.notifications
     ) {
-      const subscribed = await subscribeToPushNotifications(registration);
-      if (!subscribed) {
-        setNotificationsState(false);
-      } else {
-        setNotificationsState(true);
-      }
+      await subscribeToPushNotifications(registration);
     }
     if (registration.active) {
       registration.active.postMessage({
