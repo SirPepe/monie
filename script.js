@@ -1,3 +1,5 @@
+import { urlBase64ToUint8Array } from "./helpers.js";
+
 // Maps currency codes (eg. "EUR") to an object containing a currencies' name
 // (eg. "Euro") and symbol (eg. "€"). See https://tinyurl.com/jsmapdocs
 // for more information on maps.
@@ -373,7 +375,6 @@ const init = (rates, lastInput) => {
 
 }
 
-
 // Initialize with the rates and data from the cache
 Promise.all([ getRates({ refresh: false }), restoreInput() ])
   .then( ([ rates, lastInput ]) => init(rates, lastInput) )
@@ -381,7 +382,6 @@ Promise.all([ getRates({ refresh: false }), restoreInput() ])
     window.alert(o_O);
     console.error(o_O);
   });
-
 
 let pushSubscription;
 
@@ -394,7 +394,8 @@ const subscribeToPushNotifications = async (registration) => {
     let subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array("BJA61PkUXQzJPj22WQs7C8Vrqu20YKFDEahjbYvs7E4LoyxZHabDTP_NgBxA1PGhJjyM8Le9RNZ_lqygcodNEiQ"),
       });
     }
     const { key, authSecret, endpoint } = getSubscriptionInfo(subscription);

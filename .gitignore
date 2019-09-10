@@ -1,2 +1,4 @@
 node_modules
 run-server.sh
+secrets/gcmkey
+secrets/privatekey

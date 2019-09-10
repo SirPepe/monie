@@ -4,7 +4,12 @@ const bodyParser = require("body-parser");
 const serveStatic = require("serve-static");
 const webPush = require("web-push");
 
-webPush.setGCMAPIKey(process.argv[process.argv.length - 1] || null);
+webPush.setGCMAPIKey(fs.readFileSync("secrets/gcmkey", { encoding: "utf-8" }),);
+webPush.setVapidDetails(
+  "mailto:peter@peterkroener.de",
+  "BJA61PkUXQzJPj22WQs7C8Vrqu20YKFDEahjbYvs7E4LoyxZHabDTP_NgBxA1PGhJjyM8Le9RNZ_lqygcodNEiQ",
+  fs.readFileSync("secrets/privatekey", { encoding: "utf-8" }),
+);
 
 const app = express();
 app.use(bodyParser.json());
