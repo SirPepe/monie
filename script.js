@@ -57,6 +57,7 @@ const convertRelative = (rates, from, to, base = "EUR") => {
 
 // DOM elements
 const hamburgerButton      = document.querySelector(".header__hamburger a");
+const installButton        = document.querySelector(".install");
 const swStatus             = document.querySelector(".swstatus");
 const overlay              = document.querySelector(".overlay");
 const travelCurrencyInput  = document.querySelector(".currency__select--travel");
@@ -427,6 +428,25 @@ const postSubscripionInfo = async (data) => {
   }
 };
 
+// Wait for the installation to become possible and show a nice install button
+// in the sidebar
+window.addEventListener("beforeinstallprompt", async (evt) => {
+  evt.preventDefault();
+  installButton.disabled = false;
+  installButton.classList.remove("install--inactive");
+
+  installButton.addEventListener("click", () => {
+    evt.prompt();
+    installButton.disabled = true;
+  });
+
+  const { outcome } = await evt.userChoice;
+  if (outcome !== "dismissed") {
+    window.alert("Willkommen an Bord!");
+  }
+  installButton.classList.add("install--inactive");
+
+}, { once: true });
 
 // Launch the service worker and subscribe to push notifications notifications once
 // everything else is done

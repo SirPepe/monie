@@ -99,6 +99,29 @@ label.not-supported::after {
   font-size: 0.6em;
 }
 
+.install {
+  background: var(--dark);
+  color: #FFF;
+  box-shadow: var(--box-shadow);
+  border: 2px solid var(--border-color);
+  padding: 0.5em 1em;
+  font-weight: bold;
+}
+.install:focus {
+  box-shadow: var(--box-shadow), 0 0 0.333em var(--accent);
+  outline: none;
+}
+.install__icon {
+  font-weight: bold;
+  margin-right: 0.75em;
+}
+.install:disabled {
+  color: #CCC;
+}
+.install--inactive {
+  display: none;
+}
+
 .container {
   max-width: 960px;
   margin: 0 auto;
@@ -243,6 +266,7 @@ label.not-supported::after {
   border-bottom-color: transparent;
   background: var(--accent);
   color: #FFF;
+  outline: 1px solid var(--accent);
 }
 
 
