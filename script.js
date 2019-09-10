@@ -440,10 +440,7 @@ window.addEventListener("beforeinstallprompt", async (evt) => {
     installButton.disabled = true;
   });
 
-  const { outcome } = await evt.userChoice;
-  if (outcome !== "dismissed") {
-    window.alert("Willkommen an Bord!");
-  }
+  await evt.userChoice;
   installButton.classList.add("install--inactive");
 
 }, { once: true });
