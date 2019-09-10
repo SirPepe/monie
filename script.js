@@ -424,10 +424,9 @@ const postSubscripionInfo = async (data) => {
   }
 };
 
-// Wait for the installation to become possible and show a nice install button
-// in the sidebar
+// Wait for the installation to become possible and then show a nice install
+// button in the sidebar in addition to the regular install prompt
 window.addEventListener("beforeinstallprompt", async (evt) => {
-  evt.preventDefault();
   installButton.disabled = false;
   installButton.classList.remove("install--inactive");
 
