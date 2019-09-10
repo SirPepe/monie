@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_ID = "monie-v69";
+const CACHE_ID = "monie-v70";
 
 const FILES = [
   "./", "script.js", "helpers.js", "style.css",
@@ -8,6 +8,7 @@ const FILES = [
   "img/icon48.png", "img/icon72.png", "img/icon96.png", "img/icon120.png",
   "img/icon144.png", "img/icon152.png", "img/icon167.png", "img/icon168.png",
   "img/icon180.png", "img/icon192.png", "img/icon384.png",
+  "img/apple-touch-icon-120.png", "img/apple-touch-icon-152.png", "img/apple-touch-icon-167.png", "img/apple-touch-icon-180.png",
   "img/badge.png", "favicon.ico", "manifest.webmanifest",
 ];
 

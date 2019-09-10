@@ -16,10 +16,10 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="icon.svg"
-   inkscape:export-filename="/home/peter/Brainfire/public_html/OpenSource/monie/img/apple-tourch-icon-167.png"
-   inkscape:export-xdpi="58.710938"
-   inkscape:export-ydpi="58.710938">
+   sodipodi:docname="apple.svg"
+   inkscape:export-filename="/home/peter/Brainfire/public_html/OpenSource/monie/img/apple-tourch-icon-152.png"
+   inkscape:export-xdpi="56.999992"
+   inkscape:export-ydpi="56.999992">
   <defs
      id="defs4">
     <linearGradient
@@ -181,8 +181,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="2.8"
-     inkscape:cx="166.77098"
-     inkscape:cy="139.82093"
+     inkscape:cx="109.98526"
+     inkscape:cy="119.97812"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -227,8 +227,10 @@
      transform="translate(0,-796.36216)">
     <path
        style="opacity:1;fill:url(#linearGradient4148);fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:16;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-       d="M 256,924.36218 A 128,128 0 0 1 128,1052.3622 128,128 0 0 1 0,924.36218 a 128,128 0 0 1 128,-128 128,128 0 0 1 128,128 z"
-       id="path4140" />
+       d="M 256,1052.3622 H 0 V 796.36216 h 256 c 0,0 0,185.30755 0,256.00004 z"
+       id="path4140"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccc" />
     <g
        transform="translate(52.999998,691.46216)"
        style="font-style:normal;font-weight:normal;font-size:50px;line-height:125%;font-family:Sans;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;filter:url(#filter5998)"
