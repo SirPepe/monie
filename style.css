@@ -61,6 +61,29 @@ input:focus, select:focus {
   outline: none;
 }
 
+input[type="checkbox"] + .text {
+  display: inline-block;
+  transform: translateX(-1em);
+  transition: all var(--transition-time);
+}
+input[type="checkbox"] + .text::before {
+  content: " « ";
+  color: var(--accent);
+  font-weight: bold;
+  position: relative;
+  top: -2px;
+  opacity: 0;
+  transition: all var(--transition-time);
+}
+input[type="checkbox"]:focus + .text,
+input[type="checkbox"]:hover + .text {
+  transform: translateX(0);
+}
+input[type="checkbox"]:focus + .text::before,
+input[type="checkbox"]:hover + .text::before {
+  opacity: 1;
+}
+
 label.disabled span.text,
 label.not-supported span.text {
   text-decoration: line-through;
