@@ -229,10 +229,12 @@ label.not-supported::after {
     z-index: 1;
     margin: 0;
     width: 320px;
-    transition: transform var(--transition-time);
+    transition: transform var(--transition-time),
+                box-shadow var(--transition-time);
   }
   body:not(.sidebarOpened) .sidebar {
     transform: translateX(-100%);
+    box-shadow: none;
   }
 }
 
