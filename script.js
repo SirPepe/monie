@@ -429,16 +429,17 @@ const postSubscripionInfo = async (data) => {
 window.addEventListener("beforeinstallprompt", async (evt) => {
   installButton.disabled = false;
   installButton.classList.remove("install--inactive");
-
   installButton.addEventListener("click", () => {
     evt.prompt();
     installButton.disabled = true;
   });
-
-  await evt.userChoice;
-  installButton.classList.add("install--inactive");
-
 }, { once: true });
+
+// Hide the install button once the app has been installed (either via the
+// install button or the native prompt)
+window.addEventListener("appinstalled", () => {
+  installButton.classList.add("install--inactive");
+});
 
 // Launch the service worker and subscribe to push notifications notifications once
 // everything else is done
