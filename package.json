@@ -7,7 +7,7 @@
   "license": "MIT",
   "dependencies": {
     "body-parser": "^1.18.2",
-    "express": "^4.16.2",
+    "express": "^4.17.3",
     "http-proxy": "^1.16.2",
     "serve-static": "^1.13.2",
     "web-push": "^3.3.0"
